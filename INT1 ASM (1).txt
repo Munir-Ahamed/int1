@@ -1,0 +1,181 @@
+.org 0x0000
+rjmp reset
+
+.org 0x0004
+rjmp int1_ISR
+
+.org 0x0100
+
+reset:
+	  ;Loading stack pointer address
+      LDI R16,0x70
+	  OUT SPL,R16
+	  LDI R16,0x00
+	  OUT SPH,R16
+
+	  ;Interface port B pin0 to be output
+	  ;so to view LED blinking
+
+	  LDI R16,0x00
+	  OUT DDRD,R16
+
+	  ;Set MCUCR register to enable low level interrupt
+	  OUT MCUCR,R16
+
+	  ;Set GICR register to enable interrupt 1
+	  OUT MCUCR,R16
+
+	  LDI R16,0x00
+	  OUT PORTB,R16
+
+	  SEI
+ind_loop:rjmp ind_loop
+
+int1_ISR:IN R16,SREG
+		 PUSH R16
+
+		 LDI R16,0x0A
+		 MOV R0,R16
+		 ;Modify below loops to make LED blink for 1 sec
+	c1:	 LDI R16,0x01
+		 OUT PORTB,R16
+
+		 LDI R16,0xFF
+	a1:	 LDI R17,0xFF
+	a2:	 DEC R17
+		 BRNE a2
+		 DEC R16
+		 BRNE a1
+		 
+		 LDI R16,0x00
+		 OUT PORTB,R16
+
+
+
+
+
+/////////////////////////////////////////////////////////////
+
+;
+; timer.asm
+;
+; Created: 22-09-2021 02:40:31 PM
+; Author : user
+;
+
+
+.org 0x0000
+rjmp reset
+
+.org 0x0004
+rjmp int1_ISR
+
+.org 0x0100
+
+reset:
+									;Loading stack pointer address
+      LDI R16,0x70
+	  OUT SPL,R16
+	  LDI R16,0x00
+	  OUT SPH,R16
+									;Interface port B pin0 to be output
+	  LDI R16,0x01
+	  OUT DDRB,R16
+									;so to view LED blinking
+
+	  LDI R16,0x00
+	  OUT DDRD,R16
+									;Set MCUCR register to enable low level interrupt
+	  OUT MCUCR,R16
+
+									;Set GICR register to enable interrupt 1
+	  LDI R16,1<<INT0
+	  OUT GICR,R16
+	  SEI
+
+	  LDI R16,0x00
+	  OUT PORTB,R16
+
+	  SEI
+ind_loop:rjmp ind_loop
+
+int1_ISR:IN R16,SREG
+		 PUSH R16
+
+		 LDI R16,0x0A
+		 MOV R0,R16
+									;Modify below loops to make LED blink for 1 sec
+	c1:	 LDI R16,0x01
+		 OUT PORTB,R16
+
+		 LDI R16,0xFA
+	a1:	 LDI R17,0xFA
+	a2:	 DEC R17
+		 BRNE a2
+		 DEC R16
+		 BRNE a1
+		 LDI R16,0xFA
+	a3:	 LDI R17,0xFA
+	a4:	 DEC R17
+		 BRNE a4
+		 DEC R16
+		 BRNE a3
+		 
+		 LDI R16,0x00
+		 OUT PORTB,R16
+
+		 DEC R0
+		 BRNE b1
+		 RETI
+
+
+
+//////////////////////////////////////////////////////////////////////////////////
+
+/*
+ * timer_c.c
+ *
+ * Created: 22-09-2021 04:14:41 PM
+ * Author : user
+ */ 
+
+#define F_CPU 1000000  // clock frequency
+
+#include <avr/io.h>
+#include <util/delay.h>
+#include <avr/interrupt.h>
+
+ISR (INT1_vect)
+{
+int i;
+for (i=1;i<=10;i++) // for 10 times LED blink
+
+{
+PORTB=0x01;
+_delay_ms(1000);   // delay of 1 sec
+PORTB=0x00;
+_delay_ms(1000);
+}
+}
+
+int main(void)
+{
+
+//Set the input/output pins appropriately
+//To enable interrupt and port interfacing
+//For LED to blink
+
+DDRD=0x00;   //Set appropriate data direction for D
+DDRB=0x01;   //Make PB0 as output
+MCUCR=0x00;  //Set MCUCR to level triggered
+GICR=0x00;   //Enable interrupt 1
+PORTB=0x00;
+sei();       // global interrupt flag
+
+while (1) //wait
+{
+}
+
+}
+
+
